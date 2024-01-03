@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     # Available metrics to add to model: https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-model-quality-metrics.html
     report_dict = {
-        "binary_classification_metrics": {
+        "classification_metrics": {
             "accuracy": {"value": accuracy, "standard_deviation": "NaN"},
             "precision": {"value": precision, "standard_deviation": "NaN"},
             "recall": {"value": recall, "standard_deviation": "NaN"},
