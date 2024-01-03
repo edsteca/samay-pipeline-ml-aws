@@ -110,8 +110,7 @@ Integrate other relevant data from S3, such as:
 Integration with Other AWS Services: Integrate with services like Amazon SageMaker for insights into model training and performance.
 
 
-
-## PredictionsSamayPipeline
+# PredictionsSamayPipeline
 
 Overview
 
@@ -122,10 +121,13 @@ Key Components
 1. EventBridge Rule:
 
 Detects new data in the Kinesis Data Stream.
+
 Triggers a Lambda function to execute the pipeline.
+
 2. Lambda Function:
 
 Starts a SageMaker pipeline execution.
+
 3. SageMaker Pipeline:
 
 Data Processing: Preprocesses data using SKLearnProcessor.
@@ -170,5 +172,7 @@ Model Metrics: Captured and associated with the registered model.
 References
 
 SageMaker Pipelines: https://docs.aws.amazon.com/sagemaker/latest/dg/pipelines.html
+
 EventBridge: https://docs.aws.amazon.com/eventbridge/latest/userguide/
+
 Lambda: https://docs.aws.amazon.com/lambda/latest/dg/
