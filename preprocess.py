@@ -10,75 +10,121 @@ import io
 BASE_DIR = "ml/processing"
 
 #Function to transform the dataset for the model
-def transform_data(data):
+def extract_nested_zip(zip_file_path, extraction_path):
+    """
+    Extract a zip file, including any nested zip files.
+    Delete the zip file after extraction.
+    """
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+        # Extract all the contents into the directory
+        zip_ref.extractall(extraction_path)
 
-    df=data
-    genero = {'F': 1,'M': 2}
-    medi_especi = {
-            'Calcipotriol mas betametasona': 0,
-                              'Metotrexate': 1,
-                              'Secukinumab': 2,
-                               'Expectante': 3,
-                     'Adalimumab ( humira)': 4,
-                   'Adalimumab ( amgevita)': 5,
-                               'Guselkumab': 6,
-                        'Fotoquimioterapia': 7,
-                               'Ixekizumab': 8,
-                               'Apremilast': 9,
-                               'Clobetasol': 10,
-                             'Betametasona': 11,
-                              'Ustekinumab': 12,
-                             'Risankizumab': 13,
-                               'Infliximab': 14,
-                                'Golimumab': 15,
-                               'Acitretina': 16,
-                            'Isotretinoina': 17,
-                               'Etanercept': 18,
- 'Fluorato De Mometasona /Acido Salicilico': 19,
-                 'Propionato de clobetasol': 20,
-                             'Certolizumab': 21,
-                    'Furoato de mometasona': 22,
-             'Dipropionato de betametasona': 23,
-                             'Prednisolona': 24,
-                             'Fexofenadina': 25,
-               'Trimetoprim/Sulfametoxazol': 26,
-                            'Desloratadina': 27,
-                              'Tofacitinib': 28,
-                               'Cetirizina': 29,
-                               'Tacrolimus': 30,
-                                 'Desonida': 31,
-                               'Loratadina': 32,
-                             'Ciclosporina': 33,
-           'Betametasona/ acido salicilico': 34,
-                                  'Dapsona': 35,
-                        'Quimiofototerapia': 36,
-                           'Hidrocortisona': 37
-    }
-    tipo_terapia = { 'Terapia tópica': 0, 'Terapia sistématica de 1a linea': 1, 'Terapia biológica': 2 }
-    terapia_previa = { 'Si': 0, 'No': 1 }
-    adherencia = { 'No Adherente': 0, 'Adherente': 1 }
-    df = df[df['IMC'] <= 100]
-    df = df.drop(['Fecha_Registro', 'Pasi_fecha_inicial', 'Pasi_fecha_final', 'Dlqi_fecha_inicial', 'Dlqi_fecha_final'], axis=1)
-    df = df.drop(['Zona', 'Ciudad', 'Departamento'], axis=1)
-    df = df.drop(['Num_Morbilidades', 'Multimorbido', 'Num_Medicamentos','Polimedicado'], axis=1)
-    df= df.dropna()
-    df['Genero'] = df['Genero'].apply(lambda x: genero[x])
-    df['Medicamento_especifico'] = df['Medicamento_especifico'].apply(lambda x: medi_especi[x])
-    df['Tipo_terapia'] = df['Tipo_terapia'].apply(lambda x: tipo_terapia[x])
-    df['Terapias_Previas'] = df['Terapias_Previas'].apply(lambda x: terapia_previa[x])
-    df['Clasificacion_Adherencia'] = df['Clasificacion_Adherencia'].apply(lambda x: adherencia[x])
-    return df
+        # Iterate through each file in the extracted files
+        for file in zip_ref.namelist():
+            # Check if the file is a zip file
+            if file.endswith('.zip'):
+                # Construct full path to the nested zip file
+                nested_zip_path = os.path.join(extraction_path, file)
+
+                # Recursively extract the nested zip file
+                extract_nested_zip(nested_zip_path, extraction_path)
+
+                # Optionally, remove the nested zip file after extraction
+                os.remove(nested_zip_path)
     
     
 #Function to extract the patients for apply the model    
-def extract_patient(data):
-    df=data
-    df = df[df['Fracaso_o_exito'].isnull()]
-    df=df.drop(['Fracaso_o_exito'], axis=1)
-    print("Patients to predict extracted")
-    df = transform_data(df) 
-    return df
+def extract_df(dataset_path=f"{BASE_DIR}/inputdata",obj):
+    body = obj['Body']
+    with open(os.path.join(dataset_path, 'my-local-file.zip'), 'wb') as f:
+        f.write(body.read())
+    for file in os.listdir(dataset_path):
+        if file.endswith('.zip'):
+            zip_file_path = os.path.join(dataset_path, file)
+            extract_nested_zip(zip_file_path, dataset_path)
+    # Define the path to the dataset directory
+    data_dir = pathlib.Path(dataset_path)
+    
+    # List the files in the directory
+    commands = np.array(os.listdir(data_dir))
+    
+    # Filter and remove 'README.md' from the list of files
+    commands = commands[commands != 'README.md']
+    
+    # Split each element in the list by commas, and then by underscores
+    a = [line.split(',') for line in commands]
+    b = [x[0].split('_') for x in a]
+    
+    # Extract the label only if the element has at least two parts
+    label = [c[1] for c in b if len(c) > 1]
+    
+    # Convert labels to lowercase
+    label = [x.lower() for x in label]
+    
+    # Iterate through the labels and perform label consolidation
+    for i in range(336):
+        if label[i] == 'asthma and lung fibrosis':
+            label[i] = 'asthma'
+        elif label[i] == 'heart failure + copd' or label[i] == 'heart failure + lung fibrosis ':
+            label[i] = 'heart failure'
+        else:
+            label[i] = label[i]
+    
+    def return_unique_labels(labels):
+        # Removing duplicates from the list while maintaining the order
+        unique_labels = []
+        for label in labels:
+            if label not in unique_labels:
+                unique_labels.append(label)
+        return unique_labels
+    
+    labels = return_unique_labels(label)
+    
+    # Initialize an empty array to store the full paths of WAV files
+    wav_files = []
+    
+    # Iterate through the files in the directory
+    for file in os.listdir(dataset_path):
+        # Check if the file is a WAV file
+        if file.endswith(".wav"):
+            # Add the full path of the file to the array
+            wav_files.append(os.path.join(dataset_path, file))
+    
+    # Initialize an array to store the data of each WAV file
+    wav_data = []
+    
+    # Iterate through the WAV file paths in the wav_files array
+    for filepath in wav_files:
+        # Read the WAV file using scipy.io.wavfile
+        sample_rate, data = scipy.io.wavfile.read(filepath)
+    
+        # Add the data, sample rate, file path, and data type to the wav_data array
+        wav_data.append({
+            "file_path": filepath,
+            "sample_rate": sample_rate,
+            "data": data,
+            "data_type": data.dtype
+        })
 
+    
+    # Ensure the number of labels matches the number of WAV files
+    assert len(label) == len(wav_data)
+    
+    # Extracting only the 'data' from each WAV file
+    data_values = [item['data'] for item in wav_data]
+    
+    # Creating a DataFrame with 'data' and 'label'
+    sound_df = pd.DataFrame({
+        'data': data_values,  # Column 'data' containing waveform data arrays
+        'label': label # Column 'label' containing labels
+    
+    })
+    
+        
+    return sound_df
+def extract_patient(data):
+    df = data[data['label'] == 'na']]
+    return df
 
 
 
@@ -96,12 +142,13 @@ if __name__ == "__main__":
 
     print('**************************** Carga y formateo de datos ****************************')
     pathlib.Path(f"{BASE_DIR}/input").mkdir(parents=True, exist_ok=True)
+    pathlib.Path(f"{BASE_DIR}/inputdata").mkdir(parents=True, exist_ok=True)
     s3 = boto3.client('s3')
     obj = s3.get_object(Bucket=bucket, Key=key)
-    data = pd.read_parquet(io.BytesIO(obj['Body'].read()))
+    dataset_path=f"{BASE_DIR}/inputdata"
+    data = extract_df(dataset_path=f"{BASE_DIR}/inputdata",obj)
     print("Total de datos en el dataframe: ", len(data))
-
-    data_result=transform_data(data)
+    
     data_to_predict=extract_patient(data)
 
     output_directory = os.path.join("/opt/ml/processing/output", "data_to_train.csv")
@@ -112,7 +159,7 @@ if __name__ == "__main__":
 
 
     print("Guardando datos en {}".format(output_directory))
-    data_result.to_csv(output_directory, sep=';')
+    data.to_csv(output_directory, sep=';')
     print("Guardando datos en {}".format(output_directory_to_predict))
     data_to_predict.to_csv(output_directory_to_predict, sep=';')
 
