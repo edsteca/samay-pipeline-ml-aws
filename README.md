@@ -3,7 +3,7 @@ This is the repository for the development of the ML pipeline for Samay Health.
 AI-driven system integrating a respiratory disease detection model into a clinical management platform on AWS, incorporating the considerations you mentioned:
 
 
-![Arquitectura](https://raw.githubusercontent.com/victorhtorres/SoyInformatico/master/MatematicasDiscretas/Images/formula-suma-termino-progresion-geometrica.png)
+![Arquitectura](https://github.com/edsteca/samay-pipeline-ml-aws/blob/main/arquitectura.png)
 
 **System Architecture:**
 
