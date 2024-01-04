@@ -65,7 +65,7 @@ Challenges and Solutions:
 
 **Cost Optimization:** Leverage AWS's cost optimization tools and strategies to manage expenses.
 
-##Incorporating Amazon QuickSight into the Architecture:
+## Incorporating Amazon QuickSight into the Architecture:
 
 **Data Preparation:**
 
